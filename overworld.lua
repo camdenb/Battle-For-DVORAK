@@ -4,12 +4,14 @@ map = {}
 player = {}
 
 function overworld:init()
-	camera = cam(WINDOW_WIDTH / 2, WINDOW_HEIGHT / 2)
+
 end
 
 function overworld:enter()
-
 	
+	overworld.camera = cam(WINDOW_WIDTH / 2, WINDOW_HEIGHT / 2)
+
+	takeScreenshot('battle')
 
 	overworld:loadConstants()
 	overworld:initEverything()
@@ -25,14 +27,14 @@ function overworld:update()
 end
 
 function overworld:draw()
-	camera:attach()
+	overworld.camera:attach()
 		love.graphics.setColor(255,255,255,100)
 		love.graphics.draw(img_bg,-250,-250)
 		-- map.draw()
 		overworld:drawEnemies()
 		player.draw()
 		overworld:drawLetters()
-	camera:detach()
+	overworld.camera:detach()
 end
 
 function overworld:keypressed(key)
@@ -68,11 +70,13 @@ function overworld:loadConstants()
 	enemies = {}
 
 	img_bg = love.graphics.newImage('bg.png')
+
+	overworld.CURRENT_ENEMY = nil
 end
 
 function overworld:initEverything()
 	player.init()
-	overworld:spawnEnemy(vector(15,25))
+	overworld:spawnEnemy(player.pos)
 end
 
 --[[------
@@ -100,7 +104,7 @@ function player.init()
 	-- pos is in MAP COORDS not actual coords, ie it's by cell not by pixel
 	player.pos = vector(1,1)
 
-	camera:lookAt((player.pos * map.CELLSIZE):unpack())
+	overworld.camera:lookAt((player.pos * map.CELLSIZE):unpack())
 		
 	-- size is in pixels
 	player.size = map.CELLSIZE - 6
@@ -124,7 +128,7 @@ end
 function player.checkCell(location)
 	for i,enemy in ipairs(enemies) do
 		if enemy.pos == location then
-			overworld:triggerBattle()
+			overworld:triggerBattle(enemy)
 		end
 	end
 end
@@ -149,12 +153,12 @@ function overworld:nextMovement()
 		end
 	end
 	player.checkCell(player.pos)
-	camera:lookAt((player.pos * map.CELLSIZE):unpack())
+	overworld.camera:lookAt((player.pos * map.CELLSIZE):unpack())
 end
 
 function overworld:spawnEnemy(_pos)
 	local enemy = {
-		pos = _pos, enemy_type = 1, size = map.CELLSIZE - 10
+		pos = _pos, enemy_type = 2, size = map.CELLSIZE - 10
 	}
 	table.insert(enemies, enemy)
 end
@@ -213,7 +217,8 @@ end
 misc stuff
 ------]]--
 
-function overworld:triggerBattle()
+function overworld:triggerBattle(enemy)
+	overworld.CURRENT_ENEMY = enemy
 	Gamestate.switch(battle)	
 end
 

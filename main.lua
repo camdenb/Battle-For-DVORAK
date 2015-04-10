@@ -5,9 +5,6 @@ Gamestate = require('lib/gamestate')
 require('overworld')
 require('battle')
 
-local tickCounter = 0
-local tickMax = 60
-
 function love.load()
 
 	WINDOW_HEIGHT = 500
@@ -20,7 +17,7 @@ function love.load()
 	love.keyboard.setKeyRepeat(true)
 
 	Gamestate.registerEvents()
-	Gamestate.switch(overworld)
+	Gamestate.switch(battle)
 
 end
 
@@ -31,11 +28,7 @@ end
 
 function love.update(dt)
 
-	tickCounter = tickCounter + 1
-	if tickCounter >= tickMax then
-		tick()
-		tickCounter = 0
-	end
+	
 
 end
 
@@ -49,4 +42,14 @@ end
 
 function tick()
 	
+end
+
+function takeScreenshot(string)
+	print(string)
+	local scrot = love.graphics.newScreenshot()
+	if love.filesystem.exists(string .. '-' .. os.date('%m-%d_%H-%M-%S') .. '.png') then
+		scrot:encode(string .. '-' .. os.date('%m-%d_%H-%M-%S') .. '-' .. tostring(math.random(1,100)) .. '.png', 'png')
+	else
+		scrot:encode(string .. '-' .. os.date('%m-%d_%H-%M-%S') .. '.png', 'png')
+	end
 end
