@@ -1,6 +1,9 @@
 cam = require('lib/camera')
 vector = require('lib/vector')
 Gamestate = require('lib/gamestate')
+Timer = require('lib/timer')
+
+require('lib/slam')
 
 require('overworld')
 require('battle')
@@ -27,7 +30,7 @@ function love.resize(w, h)
 end
 
 function love.update(dt)
-
+	Timer.update(dt)
 	
 
 end
