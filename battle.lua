@@ -15,9 +15,9 @@ function battle:enter()
 	battle:loadConstants()
 	battle:initEverything()
 
-	Timer.addPeriodic(5, function()
-		battle:objectHit(battle.player, math.random(50, 100))
-	end)
+	-- Timer.addPeriodic(5, function()
+	-- 	battle:objectHit(battle.player, math.random(50, 100))
+	-- end)
 
 end
 
@@ -69,7 +69,7 @@ function battle:loadConstants()
 
 	battle:loadWordsFromFile()
 
-	img_enemy_1 = love.graphics.newImage('enemy_1.png')
+	-- img_enemy_1 = love.graphics.newImage('enemy_1.png')
 	img_enemy_2 = love.graphics.newImage('enemy_2.png')
 	img_enemy_2:setFilter("nearest")
 	img_player = love.graphics.newImage('player.png')
@@ -169,7 +169,7 @@ function battle:initEnemy()
 		battle.enemy_pos = vector(320, -35)
 		battle.enemy.name = 'Skeleton'
 	elseif battle.enemy.enemy_type == 2 then
-		battle.enemy_pos = vector(320, -35)
+		battle.enemy_pos = vector(320, -45)
 		battle.enemy.color = {255, 255, 255}
 		battle.enemy.name = 'Slime'
 	end
