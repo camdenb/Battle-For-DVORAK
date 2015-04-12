@@ -1,12 +1,15 @@
 cam = require('lib/camera')
 vector = require('lib/vector')
 Gamestate = require('lib/gamestate')
+Signals = require('lib/signal')
 Timer = require('lib/timer')
 
 require('lib/slam')
 
 require('overworld')
 require('battle')
+require('midscreen')
+require('inputbar')
 
 function love.load()
 
@@ -18,6 +21,8 @@ function love.load()
 	love.graphics.setBackgroundColor(255, 255, 255)
 
 	love.keyboard.setKeyRepeat(true)
+
+	math.randomseed(os.time())
 
 	Gamestate.registerEvents()
 	Gamestate.switch(battle)
@@ -55,4 +60,41 @@ function takeScreenshot(string)
 	else
 		scrot:encode(string .. '-' .. os.date('%m-%d_%H-%M-%S') .. '.png', 'png')
 	end
+end
+
+function contains(table, value)
+	for i,v in ipairs(table) do
+		if v == value then
+			return true
+		end
+	end
+	return false
+end
+
+function createEnemy(enemy_type)
+	local enemy = {}
+	enemy.pos = vector(0,0)
+
+	if enemy_type == nil then
+		enemy_type = math.random(1,3)
+	end
+	enemy.enemy_type = enemy_type
+	if enemy_type == 1 then
+		enemy.name = 'Skeleton'
+	elseif enemy_type == 2 then
+		enemy.name = 'Slime'
+	elseif enemy_type == 3 then
+		enemy.name = 'Elemental'
+	else
+		enemy.name = 'Enemy'
+	end
+
+	enemy.color = {255, 255, 255}
+	enemy.image = love.graphics.newImage('enemy' .. tostring(enemy_type) .. '.png')
+	enemy.image:setFilter("nearest")
+	enemy.max_health = 100
+	enemy.kind = 'enemy'
+
+	return enemy
+
 end

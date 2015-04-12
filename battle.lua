@@ -6,9 +6,9 @@ end
 
 function battle:enter()
 
-	battle.camera = cam(WINDOW_WIDTH / 2, WINDOW_HEIGHT / 2)
+	love.graphics.setBackgroundColor(220, 220, 220)
 
-	math.randomseed(os.time())
+	battle.camera = cam(WINDOW_WIDTH / 2, WINDOW_HEIGHT / 2)
 
 	takeScreenshot('battle')
 
@@ -55,6 +55,10 @@ function battle:tick()
 
 end
 
+function battle:switchWithInfo()
+	Gamestate.switch(battle)
+end
+
 --[[------
 FUNCTIONS
 ------]]--
@@ -64,16 +68,14 @@ init stuff
 ------]]--
 
 function battle:loadConstants()
+
 	battle.tickCounter = 0
 	battle.tickMax = 60
 
 	battle:loadWordsFromFile()
 
-	-- img_enemy_1 = love.graphics.newImage('enemy_1.png')
-	img_enemy_2 = love.graphics.newImage('enemy_2.png')
-	img_enemy_2:setFilter("nearest")
-	img_player = love.graphics.newImage('player.png')
-	img_player:setFilter("nearest")
+	battle.img_player = love.graphics.newImage('player.png')
+	battle.img_player:setFilter("nearest")
 
 	sound_type = love.audio.newSource({'tw2.wav'}, 'stream')
 	sound_type:setVolume(.4)
@@ -84,8 +86,8 @@ function battle:loadConstants()
 	battle.health_borderwidth = 2
 	battle.health_height = 10
 
-	healthbar_font = love.graphics.newFont('zig.ttf', 10)
-	battleFont = love.graphics.newFont('zig.ttf', 30)
+	battle.healthbar_font = love.graphics.newFont('zig.ttf', 10)
+	battle.battleFont = love.graphics.newFont('zig.ttf', 30)
 
 	battle.letters = {
 		'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z', ' '
@@ -100,13 +102,13 @@ function battle:loadConstants()
 	battle.current_word_pos = battle.current_word_pos_PERMANENT:clone()
 
 	battle.wordTimer = Timer.new()
-	battle.enemy_pos = vector(100,100)
 end
 
 function battle:initEverything()
 	battle:initEnemy()
 	battle:initPlayer()
 end
+
 
 --[[------
 player stuff
@@ -115,7 +117,7 @@ player stuff
 function battle:drawPlayer()
 
 	love.graphics.setColor(battle.player.color)
-	love.graphics.draw(img_player, 0, 200, 0, 10)
+	love.graphics.draw(battle.img_player, 0, 200, 0, 10)
 	battle:drawOutlineBoxThing(vector(0, 350), vector(450, 200))
 
 	local health_pos = vector(150, 330)
@@ -132,6 +134,8 @@ end
 
 function battle:initPlayer()
 	battle.player = {}
+	battle.player.kind = 'player'
+	battle.player.name = 'DICKO'
 	battle:determinePlayerStats()
 	battle.player.color = {255, 255, 255}
 end
@@ -141,38 +145,29 @@ enemy stuff
 ------]]--
 
 function battle:drawEnemy()
-	local health_pos = vector(180, 100)
+	local health_pos = vector(100, 60)
 	love.graphics.setColor(battle.enemy.color)
-	if battle.enemy.enemy_type == 1 then
-		love.graphics.draw(img_enemy_1, battle.enemy_pos.x, battle.enemy_pos.y)
-	elseif battle.enemy.enemy_type == 2 then
-		love.graphics.draw(img_enemy_2, battle.enemy_pos.x, battle.enemy_pos.y, 0, 10)
-	end
+	love.graphics.draw(battle.enemy.image, battle.enemy.pos.x, battle.enemy.pos.y, 0, 7)
 	battle:drawOutlineBoxThing(vector(182, 120), vector(450, 100))
-	battle:drawHealthBar(health_pos, battle.enemy.current_health, battle.enemy.max_health, 100, battle.enemy.name)
+	battle:drawHealthBar(health_pos, battle.enemy.current_health, battle.enemy.max_health, 200, battle.enemy.name)
 
 end
 
 function battle:determineEnemyStats()
-	if battle.enemy.enemy_type == 1 then
-		battle.enemy.max_health = 100
-	elseif battle.enemy.enemy_type == 2 then
-		battle.enemy.max_health = 100
-	end
 	battle.enemy.current_health = battle.enemy.max_health
 end
 
 function battle:initEnemy()
-	battle.enemy = overworld.CURRENT_ENEMY or {enemy_type = 2}
+	battle.enemy = createEnemy()
 	battle:determineEnemyStats()
-	if battle.enemy.enemy_type == 1 then
-		battle.enemy_pos = vector(320, -35)
-		battle.enemy.name = 'Skeleton'
-	elseif battle.enemy.enemy_type == 2 then
-		battle.enemy_pos = vector(320, -45)
-		battle.enemy.color = {255, 255, 255}
-		battle.enemy.name = 'Slime'
-	end
+	battle.enemy.pos = vector(320, 0)
+end
+
+function battle:enemyKilled()
+	Timer.tween(0.6, battle.enemy.pos, {y = 1000}, 'in-back')
+	Timer.add(1, function()
+		midscreen:switchWithInfo(battle.enemy)
+	end)
 end
 
 --[[------
@@ -194,9 +189,10 @@ function battle:drawHealthBar(health_pos, current_health, max_health, actual_wid
 
 	--name
 	love.graphics.setColor(000, 000, 000)
-	love.graphics.setFont(healthbar_font)
+	love.graphics.setFont(battle.healthbar_font)
 	love.graphics.print(name, health_pos.x, health_pos.y - 12)
-	love.graphics.print(math.ceil(tostring(current_health)) .. '/' .. tostring(max_health), health_pos.x + 60, health_pos.y - 12)
+	local healthStr = math.ceil(tostring(current_health)) .. '/' .. tostring(max_health)
+	love.graphics.print(healthStr, health_pos.x + actual_width - battle.healthbar_font:getWidth(healthStr), health_pos.y - 12)
 end
 
 function battle:drawOutlineBoxThing(pos, size)
@@ -235,10 +231,17 @@ function battle:addToHealth(object, num, animate)
 		final = 0
 	end
 	if animate then
-		Timer.tween(1, object, {current_health = final})
+		local time = math.abs((object.current_health - final) / (num * 3))
+		Timer.tween(time, object, {current_health = final})
+		if final == 0 then
+			if object.kind == 'enemy' then
+				Timer.add(time, function() battle:enemyKilled() end)
+			end
+		end
 	else
 		object.current_health = final
 	end
+	return (object.current_health - num) <= 0
 end
 
 --[[------
@@ -250,6 +253,7 @@ function battle:objectHit(object, damage)
 	Timer.add(0.6, function()
 		battle:addToHealth(object, -damage, true)
 	end)
+	return object.current_health - damage <= 0
 end
 
 function battle:animateHit(object)
@@ -291,11 +295,11 @@ function battle:drawPlayerInput()
 	else
 		love.graphics.setColor(255, 000, 000)
 	end
-	love.graphics.setFont(battleFont)
+	love.graphics.setFont(battle.battleFont)
 	-- love.graphics.print(battle.current_word, 100, 400)
 
-	local size = battleFont:getWidth(' ')
-	local height = battleFont:getHeight()
+	local size = battle.battleFont:getWidth(' ')
+	local height = battle.battleFont:getHeight()
 	for x = 1, #battle.current_word, 1 do
 		local letter = string.sub(battle.current_word, x, x)
 		love.graphics.print(letter, battle.current_word_pos.x + (x - 1) * size, battle.current_word_pos.y)
@@ -307,10 +311,10 @@ end
 
 function battle:drawPlayerPrompt()
 	love.graphics.setColor(000, 000, 000)
-	love.graphics.setFont(battleFont)
+	love.graphics.setFont(battle.battleFont)
 
-	local size = battleFont:getWidth(' ')
-	local height = battleFont:getHeight()
+	local size = battle.battleFont:getWidth(' ')
+	local height = battle.battleFont:getHeight()
 	for x = 1, #battle.answer_word, 1 do
 		local letter = string.sub(battle.answer_word, x, x)
 		love.graphics.print(letter, battle.answer_word_pos.x + (x - 1) * size, battle.answer_word_pos.y)
@@ -320,17 +324,24 @@ end
 function battle:processKeyPressed(key)
 	if contains(battle.letters, key) then
 		battle:processLetterTyped(key)
+		battle:ascertainCorrectness()
 	elseif key == 'backspace' then
 		battle:processBackspace()
+		battle:ascertainCorrectness()
 	end
 end
 
 function battle:processLetterTyped(key)
-	battle.current_word = battle.current_word .. key
+	if battle.wordIsComplete == false then
+		battle.current_word = battle.current_word .. key
 
-	local typingSound = sound_type:play()                       -- creates a new instance
-    typingSound:setPitch(.5 + math.random() * .3) 
+		local typingSound = sound_type:play()
+	    typingSound:setPitch(.5 + math.random() * .3) 
+	end
 
+end
+
+function battle:ascertainCorrectness()
 	if battle.current_word:sub(1, #battle.current_word) == battle.answer_word:sub(1, #battle.current_word) then
 		battle.word_correct_so_far = true
 		battle:checkWord()
@@ -340,7 +351,7 @@ function battle:processLetterTyped(key)
 end
 
 function battle:checkWord()
-	if battle.current_word == battle.answer_word then
+	if battle.current_word == battle.answer_word and not battle.wordIsComplete then
 		battle:wordIsCorrect()
 	end
 end
@@ -362,7 +373,7 @@ function battle:wordIsCorrect()
 	battle.word_correct_so_far = false
 	Timer.tween(.3, battle.current_word_pos, battle.answer_word_pos, 'in-back')
 	Timer.add(.3, function()
-		battle:objectHit(battle.enemy, math.random(10, 20))
+		battle:objectHit(battle.enemy, #battle.current_word * 4)
 	end)
 	battle.wordTimer.add(1, function() battle:newWord() end)
 end
@@ -370,13 +381,3 @@ end
 function battle:processBackspace()
 	battle.current_word = string.sub(battle.current_word, 1, #battle.current_word - 1)
 end
-
-function contains(table, value)
-	for i,v in ipairs(table) do
-		if v == value then
-			return true
-		end
-	end
-	return false
-end
-
