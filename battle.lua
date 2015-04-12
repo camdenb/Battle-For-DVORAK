@@ -36,6 +36,7 @@ function battle:draw()
 		battle:drawPlayer()
 		battle:drawPlayerPrompt()
 		battle:drawPlayerInput()
+		battle:drawSlash()
 	battle.camera:detach()
 end
 
@@ -76,6 +77,9 @@ function battle:loadConstants()
 
 	battle.img_player = love.graphics.newImage('player.png')
 	battle.img_player:setFilter("nearest")
+	battle.img_slash = love.graphics.newImage('hit.png')
+	battle.img_slash:setFilter("nearest")
+	battle.slashColor = {255, 255, 255, 0}
 
 	sound_type = love.audio.newSource({'tw2.wav'}, 'stream')
 	sound_type:setVolume(.4)
@@ -259,6 +263,7 @@ end
 function battle:animateHit(object)
 	local t = 0
 	sound_hurt:play()
+	battle:animateSlash()
 	Timer.do_for(0.5, function(dt)
 	    t = t + dt
 	    if (t % .2) < .1 then
@@ -269,6 +274,18 @@ function battle:animateHit(object)
 	end, function()
 	    object.color[4] = 255
 	end)
+end
+
+function battle:animateSlash()
+	Timer.tween(0.01, battle, {slashColor = {255, 255, 255, 255}}, 'linear')
+	Timer.add(0.2, function()
+		Timer.tween(0.2, battle, {slashColor = {255, 255, 255, 0}}, 'in-quart')
+	end)
+end
+
+function battle:drawSlash()
+	love.graphics.setColor(battle.slashColor)
+	love.graphics.draw(battle.img_slash, battle.enemy.pos.x, battle.enemy.pos.y, 0, 7)
 end
 
 --[[------
