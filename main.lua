@@ -18,7 +18,7 @@ function love.load()
 	WINDOW_WIDTH = 500
 
 	love.window.setMode(WINDOW_WIDTH, WINDOW_HEIGHT, {resizable=true, vsync=enableVsync, fsaa=0})
-	love.window.setTitle('typing RL')
+	love.window.setTitle('BATTLE FOR DVORAK')
 	love.graphics.setBackgroundColor(255, 255, 255)
 
 	love.keyboard.setKeyRepeat(true)
