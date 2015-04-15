@@ -91,6 +91,5 @@ function title:tweenTitle()
 		newPos = 48
 	end
 	Timer.tween(title.titleFloatTime, title.titlePos, {y = newPos}, 'in-out-sine')
-	print('dicks')
 	title.floatCounter = (title.floatCounter + 1) % 2
 end	
