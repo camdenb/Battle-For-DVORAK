@@ -27,7 +27,11 @@ end
 
 function midscreen:draw()
 
-	midscreen:drawCongratsMessage()
+	if vars.playerDeath == true then
+		 midscreen:drawDeathMessage()
+	else
+		midscreen:drawCongratsMessage()
+	end
 
 	inputBar.draw()
 
@@ -41,7 +45,6 @@ end
 
 function midscreen:switchWithInfo(enemy)
 	Gamestate.switch(midscreen)
-	midscreen.enemy = enemy
 end
 
 --[[------
@@ -83,8 +86,16 @@ function midscreen:drawCongratsMessage()
 	midscreen:drawCenteredText('You found ' .. midscreen.newCoins .. ' coins!', 170, 2)
 
 	midscreen:drawCenteredText('Type \"explore\" to \nsearch for more enemies', 350, 2)
+end
 
+function midscreen:drawDeathMessage()
+	love.graphics.setColor(000, 000, 000)
 
+	midscreen:drawCenteredText('You died!', 40, 3)
+
+	midscreen:drawCenteredText('You killed ' .. vars.enemiesKilled .. ' enemies!', 120, 2)
+
+	midscreen:drawCenteredText('Type \"restart\" to \nplay again!', 350, 2)
 end
 
 function midscreen:drawCenteredText(text, yPos, size)
@@ -123,6 +134,9 @@ function midscreen:inputBarChanged(newWord)
 	if not vars.commandInputted then
 		if newWord == 'explore' then
 			midscreen:explore()
+			vars.commandInputted = true
+		elseif newWord == 'restart' then
+			switchToBlack(battle)
 			vars.commandInputted = true
 		end
 	end

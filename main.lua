@@ -25,17 +25,23 @@ function love.load()
 
 	math.randomseed(os.time())
 
-	vars = {}
-	vars.blackScreenAlpha = 0
-	vars.commandInputted = false
-	vars.player_current_health = 200
-	vars.titleFont = love.graphics.newFont('zig.ttf', 50)
-	vars.mainFont = love.graphics.newFont('zig.ttf', 20)
-	vars.typingFont = love.graphics.newFont('zig.ttf', 25)
+	loadVars()
 
 	Gamestate.registerEvents()
 	Gamestate.switch(title)
 
+end
+
+function loadVars()
+	vars = {}
+	vars.blackScreenAlpha = 0
+	vars.commandInputted = false
+	vars.player_current_health = 200
+	vars.enemiesKilled = 0
+	vars.playerDeath = false
+	vars.titleFont = love.graphics.newFont('zig.ttf', 50)
+	vars.mainFont = love.graphics.newFont('zig.ttf', 20)
+	vars.typingFont = love.graphics.newFont('zig.ttf', 25)
 end
 
 function love.resize(w, h)
@@ -117,13 +123,13 @@ function drawBlackScreen()
 	love.graphics.rectangle('fill', 0, 0,WINDOW_WIDTH, WINDOW_HEIGHT)
 end
 
-function switchToBlack(gamestate, enemy)
+function switchToBlack(gamestate, enemy, playerDeath)
 	local time = 1
 	blackScreenAlpha = 0
 	Timer.tween(time, vars, {blackScreenAlpha = 255})
 	Timer.add(time, function()
 		if enemy then
-			gamestate:switchWithInfo(enemy)
+			gamestate:switchWithInfo(enemy, playerDeath)
 		else
 			Gamestate.switch(gamestate)
 		end

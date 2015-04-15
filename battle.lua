@@ -127,7 +127,7 @@ player stuff
 function battle:drawPlayer()
 
 	love.graphics.setColor(battle.player.color)
-	love.graphics.draw(battle.img_player, 0, 200, 0, 10)
+	love.graphics.draw(battle.img_player, battle.player.pos.x, battle.player.pos.y, 0, 10)
 	battle:drawOutlineBoxThing(vector(0, 350), vector(450, 200))
 
 	local health_pos = vector(150, 330)
@@ -144,9 +144,11 @@ end
 function battle:initPlayer()
 	battle.player = {}
 	battle.player.kind = 'player'
-	battle.player.name = 'DICKO'
+	battle.player.name = 'player'
 	battle:determinePlayerStats()
 	battle.player.color = {255, 255, 255}
+	battle.player.isDead = false
+	battle.player.pos = vector(0, 200)
 end
 
 --[[------
@@ -186,7 +188,7 @@ function battle:enemyChooseWord()
 end
 
 function battle:enemyChanceToType()
-	if math.random(1,2) == 1 and not battle.enemy.isDead and battle.enemyStart then
+	if math.random(1,2) == 1 and not battle.enemy.isDead and not battle.player.isDead and battle.enemyStart then
 		battle:enemyTypeNextLetter()
 		battle:enemyCheckWord()
 	end
@@ -212,7 +214,7 @@ function battle:enemyWordIsCorrect()
 	battle.enemy.wordIsComplete = true
 	Timer.tween(.3, battle.enemy.current_word_pos, battle.enemy.answer_word_pos, 'in-back')
 	Timer.add(.3, function()
-		battle:objectHit(battle.player, #battle.enemy.current_word * 4)
+		battle:objectHit(battle.player, #battle.enemy.current_word * 3)
 	end)
 	battle.wordTimer.add(1, function() 
 		battle:enemyNewWord()
@@ -317,6 +319,8 @@ function battle:addToHealth(object, num, animate)
 		if final == 0 then
 			if object.kind == 'enemy' and not battle.enemy.isDead then
 				Timer.add(time, function() battle:enemyKilled() end)
+			elseif object.kind == 'player' and not battle.player.isDead then
+				Timer.add(time, function() battle:playerKilled() end)
 			end
 		end
 	else
@@ -469,7 +473,7 @@ function battle:wordIsCorrect()
 	battle.word_correct_so_far = false
 	Timer.tween(.3, battle.current_word_pos, battle.answer_word_pos, 'in-back')
 	Timer.add(.3, function()
-		battle:objectHit(battle.enemy, #battle.current_word * 4)
+		battle:objectHit(battle.enemy, #battle.current_word * 3)
 	end)
 	battle.wordTimer.add(1, function() battle:newWord() end)
 end
@@ -480,9 +484,19 @@ end
 
 function battle:enemyKilled()
 	battle.enemy.isDead = true
+	vars.enemiesKilled = vars.enemiesKilled + 1
 	vars.player_current_health = battle.player.current_health
 	Timer.tween(0.6, battle.enemy.pos, {y = 1000}, 'in-back')
 	Timer.add(1, function()
 		switchToBlack(midscreen, battle.enemy)
+	end)
+end
+
+function battle:playerKilled()
+	battle.player.isDead = true
+	vars.playerDeath = true
+	Timer.tween(0.6, battle.player.pos, {y = 1000}, 'in-back')
+	Timer.add(1, function()
+		switchToBlack(midscreen)
 	end)
 end
