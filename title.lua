@@ -76,6 +76,20 @@ function title:checkWord()
 	if title.currentWord == 'play' then
 		title.commandCorrect = true
 		Timer.add(2, function() switchToBlack(battle) end)
+	elseif title.currentWord == 'fuck' and not vars.swearMode then
+		title.commandCorrect = true
+		vars.swearMode = true
+		Timer.add(2, function()
+			title.commandCorrect = false
+			title.currentWord = ''
+		end)
+	elseif title.currentWord == 'sorry' and vars.swearMode then
+		title.commandCorrect = true
+		vars.swearMode = false
+		Timer.add(2, function()
+			title.commandCorrect = false
+			title.currentWord = ''
+		end)
 	end
 end
 
@@ -91,6 +105,5 @@ function title:tweenTitle()
 		newPos = 48
 	end
 	Timer.tween(title.titleFloatTime, title.titlePos, {y = newPos}, 'in-out-sine')
-	print('dicks')
 	title.floatCounter = (title.floatCounter + 1) % 2
 end	

@@ -34,6 +34,7 @@ end
 
 function loadVars()
 	vars = {}
+	vars.swearMode = false
 	vars.blackScreenAlpha = 0
 	vars.commandInputted = false
 	vars.player_current_health = 200

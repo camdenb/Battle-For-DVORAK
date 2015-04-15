@@ -76,7 +76,11 @@ function battle:loadConstants()
 	battle.tickCounter = 0
 	battle.tickMax = 20
 
-	battle:loadWordsFromFile()
+	if vars.swearMode then
+		battle:loadWordsFromFile('swear-words.txt')
+	else
+		battle:loadWordsFromFile('smaller-words.txt')
+	end
 
 	battle.img_player = love.graphics.newImage('player.png')
 	battle.img_player:setFilter("nearest")
@@ -373,9 +377,9 @@ end
 typing stuff
 ------]]--
 
-function battle:loadWordsFromFile()
+function battle:loadWordsFromFile(file)
 	battle.words = {}
-	for line in love.filesystem.lines('words.txt') do
+	for line in love.filesystem.lines(file) do
 		table.insert(battle.words, tostring(line))
 	end
 end
