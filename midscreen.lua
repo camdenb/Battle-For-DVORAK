@@ -9,6 +9,8 @@ function midscreen:enter()
 
 	takeScreenshot('midscreen')
 
+	vars.commandInputted = false
+
 	midscreen:loadConstants()
 	midscreen:initEverything()
 
@@ -28,6 +30,8 @@ function midscreen:draw()
 	midscreen:drawCongratsMessage()
 
 	inputBar.draw()
+
+	drawBlackScreen()
 
 end
 
@@ -116,12 +120,14 @@ exploring stuff
 ------]]--
 
 function midscreen:inputBarChanged(newWord)
-	if newWord == 'explore' then
-		midscreen:explore()
+	if not vars.commandInputted then
+		if newWord == 'explore' then
+			midscreen:explore()
+			vars.commandInputted = true
+		end
 	end
 end
 
 function midscreen:explore()
-	local newEnemy = createEnemy()
-	battle:switchWithInfo()
+	switchToBlack(battle)
 end

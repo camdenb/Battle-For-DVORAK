@@ -33,11 +33,14 @@ end
 function battle:draw()
 	battle.camera:attach()
 		battle:drawEnemy()
+		battle:drawEnemyPrompt()
+		battle:drawEnemyInput()
 		battle:drawPlayer()
 		battle:drawPlayerPrompt()
 		battle:drawPlayerInput()
 		battle:drawSlash()
 	battle.camera:detach()
+	drawBlackScreen()
 end
 
 function battle:keypressed(key)
@@ -53,7 +56,7 @@ function battle:updateTick()
 end
 
 function battle:tick()
-
+	battle:enemyChanceToType()
 end
 
 function battle:switchWithInfo()
@@ -71,7 +74,7 @@ init stuff
 function battle:loadConstants()
 
 	battle.tickCounter = 0
-	battle.tickMax = 60
+	battle.tickMax = 20
 
 	battle:loadWordsFromFile()
 
@@ -82,16 +85,17 @@ function battle:loadConstants()
 	battle.slashColor = {255, 255, 255, 0}
 
 	sound_type = love.audio.newSource({'tw2.wav'}, 'stream')
-	sound_type:setVolume(.4)
+	sound_type:setVolume(.3)
 
 	sound_hurt = love.audio.newSource({'hurt.wav'}, 'stream')
-	sound_hurt:setVolume(.4)
+	sound_hurt:setVolume(.3)
 
 	battle.health_borderwidth = 2
 	battle.health_height = 10
 
 	battle.healthbar_font = love.graphics.newFont('zig.ttf', 10)
 	battle.battleFont = love.graphics.newFont('zig.ttf', 30)
+	battle.battleFont_enemy = love.graphics.newFont('zig.ttf', 20)
 
 	battle.letters = {
 		'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z', ' '
@@ -106,6 +110,8 @@ function battle:loadConstants()
 	battle.current_word_pos = battle.current_word_pos_PERMANENT:clone()
 
 	battle.wordTimer = Timer.new()
+	battle.enemyStart = false
+	Timer.add(3, function() battle.enemyStart = true end)
 end
 
 function battle:initEverything()
@@ -126,14 +132,13 @@ function battle:drawPlayer()
 
 	local health_pos = vector(150, 330)
 
-	battle:drawHealthBar(health_pos, battle.player.current_health, battle.player.max_health, 200, 'Player')
-
+	battle:drawHealthBar(health_pos, battle.player.current_health, battle.player.max_health, 200, battle.player.name)
 
 end
 
 function battle:determinePlayerStats()
 	battle.player.max_health = 200
-	battle.player.current_health = battle.player.max_health
+	battle.player.current_health = vars.player_current_health or battle.player.max_health
 end
 
 function battle:initPlayer()
@@ -165,13 +170,85 @@ function battle:initEnemy()
 	battle.enemy = createEnemy()
 	battle:determineEnemyStats()
 	battle.enemy.pos = vector(320, 0)
+
+	battle.enemy.current_word = ''
+	battle.enemy.answer_word = battle:enemyChooseWord()
+	battle.enemy.answer_word_pos_PERMANENT = vector(200, 140)
+	battle.enemy.answer_word_pos = battle.enemy.answer_word_pos_PERMANENT:clone()
+	battle.enemy.current_word_pos_PERMANENT = vector(200, 165)
+	battle.enemy.current_word_pos = battle.enemy.current_word_pos_PERMANENT:clone()
+	battle.enemy.wordIsComplete = false
+	battle.enemy.isDead = false
 end
 
-function battle:enemyKilled()
-	Timer.tween(0.6, battle.enemy.pos, {y = 1000}, 'in-back')
-	Timer.add(1, function()
-		midscreen:switchWithInfo(battle.enemy)
+function battle:enemyChooseWord()
+	return battle.words[math.random(1, #battle.words)]
+end
+
+function battle:enemyChanceToType()
+	if math.random(1,2) == 1 and not battle.enemy.isDead and battle.enemyStart then
+		battle:enemyTypeNextLetter()
+		battle:enemyCheckWord()
+	end
+end
+
+function battle:enemyTypeNextLetter()
+	battle.enemy.nextLetter = battle.enemy.answer_word:sub(#battle.enemy.current_word + 1, #battle.enemy.current_word + 1)
+	battle.enemy.current_word = battle.enemy.current_word .. battle.enemy.nextLetter
+end
+
+function battle:enemyCheckWord()
+	if battle.enemy.answer_word == battle.enemy.current_word and battle.enemy.wordIsComplete == false then
+		battle:enemyWordIsCorrect()
+	end
+end
+
+function battle:resetEnemyWordPos()
+	battle.enemy.answer_word_pos = battle.enemy.answer_word_pos_PERMANENT:clone()
+	battle.enemy.current_word_pos = battle.enemy.current_word_pos_PERMANENT:clone()
+end
+
+function battle:enemyWordIsCorrect()
+	battle.enemy.wordIsComplete = true
+	Timer.tween(.3, battle.enemy.current_word_pos, battle.enemy.answer_word_pos, 'in-back')
+	Timer.add(.3, function()
+		battle:objectHit(battle.player, #battle.enemy.current_word * 4)
 	end)
+	battle.wordTimer.add(1, function() 
+		battle:enemyNewWord()
+	end)
+end
+
+function battle:enemyNewWord()
+	battle:resetEnemyWordPos()
+	battle.enemy.answer_word = battle:enemyChooseWord()
+	battle.enemy.current_word = ''
+	battle.enemy.wordIsComplete = false
+end
+
+function battle:drawEnemyInput()
+	love.graphics.setColor(000, 000, 000)
+	love.graphics.setFont(battle.battleFont_enemy)
+
+	local size = battle.battleFont_enemy:getWidth(' ')
+	local height = battle.battleFont_enemy:getHeight()
+	for x = 1, #battle.enemy.current_word, 1 do
+		local letter = string.sub(battle.enemy.current_word, x, x)
+		love.graphics.print(letter, battle.enemy.current_word_pos.x + (x - 1) * size, battle.enemy.current_word_pos.y)
+	end
+end
+
+function battle:drawEnemyPrompt()
+	love.graphics.setColor(000, 000, 000)
+	love.graphics.setFont(battle.battleFont_enemy)
+
+	local size = battle.battleFont_enemy:getWidth(' ')
+	local height = battle.battleFont_enemy:getHeight()
+
+	for x = 1, #battle.enemy.answer_word, 1 do
+		local letter = string.sub(battle.enemy.answer_word, x, x)
+		love.graphics.print(letter, battle.enemy.answer_word_pos.x + (x - 1) * size, battle.enemy.answer_word_pos.y)
+	end
 end
 
 --[[------
@@ -238,7 +315,7 @@ function battle:addToHealth(object, num, animate)
 		local time = math.abs((object.current_health - final) / (num * 3))
 		Timer.tween(time, object, {current_health = final})
 		if final == 0 then
-			if object.kind == 'enemy' then
+			if object.kind == 'enemy' and not battle.enemy.isDead then
 				Timer.add(time, function() battle:enemyKilled() end)
 			end
 		end
@@ -263,7 +340,7 @@ end
 function battle:animateHit(object)
 	local t = 0
 	sound_hurt:play()
-	battle:animateSlash()
+	-- battle:animateSlash()
 	Timer.do_for(0.5, function(dt)
 	    t = t + dt
 	    if (t % .2) < .1 then
@@ -339,12 +416,14 @@ function battle:drawPlayerPrompt()
 end
 
 function battle:processKeyPressed(key)
-	if contains(battle.letters, key) then
-		battle:processLetterTyped(key)
-		battle:ascertainCorrectness()
-	elseif key == 'backspace' then
-		battle:processBackspace()
-		battle:ascertainCorrectness()
+	if not battle.enemy.isDead then
+		if contains(battle.letters, key) then
+			battle:processLetterTyped(key)
+			battle:ascertainCorrectness()
+		elseif key == 'backspace' then
+			battle:processBackspace()
+			battle:ascertainCorrectness()
+		end
 	end
 end
 
@@ -397,4 +476,13 @@ end
 
 function battle:processBackspace()
 	battle.current_word = string.sub(battle.current_word, 1, #battle.current_word - 1)
+end
+
+function battle:enemyKilled()
+	battle.enemy.isDead = true
+	vars.player_current_health = battle.player.current_health
+	Timer.tween(0.6, battle.enemy.pos, {y = 1000}, 'in-back')
+	Timer.add(1, function()
+		switchToBlack(midscreen, battle.enemy)
+	end)
 end

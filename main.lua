@@ -10,6 +10,7 @@ require('overworld')
 require('battle')
 require('midscreen')
 require('inputbar')
+require('title')
 
 function love.load()
 
@@ -24,8 +25,16 @@ function love.load()
 
 	math.randomseed(os.time())
 
+	vars = {}
+	vars.blackScreenAlpha = 0
+	vars.commandInputted = false
+	vars.player_current_health = 200
+	vars.titleFont = love.graphics.newFont('zig.ttf', 50)
+	vars.mainFont = love.graphics.newFont('zig.ttf', 20)
+	vars.typingFont = love.graphics.newFont('zig.ttf', 25)
+
 	Gamestate.registerEvents()
-	Gamestate.switch(battle)
+	Gamestate.switch(title)
 
 end
 
@@ -37,11 +46,15 @@ end
 function love.update(dt)
 	Timer.update(dt)
 	
-
+	if vars.blackScreenAlpha < 0 then
+		vars.blackScreenAlpha = 0
+	elseif vars.blackScreenAlpha > 255 then
+		vars.blackScreenAlpha = 255
+	end
 end
 
 function love.draw()
-	
+
 end
 
 function love.keypressed(key)
@@ -53,7 +66,7 @@ function tick()
 end
 
 function takeScreenshot(string)
-	print(string)
+	-- print(string)
 	local scrot = love.graphics.newScreenshot()
 	if love.filesystem.exists(string .. '-' .. os.date('%m-%d_%H-%M-%S') .. '.png') then
 		scrot:encode(string .. '-' .. os.date('%m-%d_%H-%M-%S') .. '-' .. tostring(math.random(1,100)) .. '.png', 'png')
@@ -97,4 +110,23 @@ function createEnemy(enemy_type)
 
 	return enemy
 
+end
+
+function drawBlackScreen()
+	love.graphics.setColor(000, 000, 000, math.ceil(vars.blackScreenAlpha))
+	love.graphics.rectangle('fill', 0, 0,WINDOW_WIDTH, WINDOW_HEIGHT)
+end
+
+function switchToBlack(gamestate, enemy)
+	local time = 1
+	blackScreenAlpha = 0
+	Timer.tween(time, vars, {blackScreenAlpha = 255})
+	Timer.add(time, function()
+		if enemy then
+			gamestate:switchWithInfo(enemy)
+		else
+			Gamestate.switch(gamestate)
+		end
+		Timer.tween(time, vars, {blackScreenAlpha = 0})
+	end)
 end
